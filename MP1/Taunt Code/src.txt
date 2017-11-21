@@ -1,0 +1,76 @@
+# ==== Jump from input polling:
+addr:
+8009023C
+J $800BCEA0
+addr:
+800BCEA0
+# ======= Store return address:
+LUI T0, $800C
+SW RA, $CE90(T0)
+LUI T0, $800F
+# ============ Top left player:
+LB T3, $32B4(T0)
+JAL FindController
+LB T4, $32B3(T0)
+# =========== Top right player:
+LB T3, $32E4(T0)
+JAL FindController
+LB T4, $32E3(T0)
+# ========= Bottom left player:
+LB T3, $3314(T0)
+JAL FindController
+LB T4, $3313(T0)
+# ======== Bottom right player:
+LB T3, $3344(T0)
+JAL FindController
+LB T4, $3343(T0)
+J ReloadReturn
+# =============== Input checks:
+FindController:
+LUI T5, $0000
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $5460(T0)
+LUI T5, $0001
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $545E(T0)
+LUI T5, $0002
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $5464(T0)
+LUI T5, $0003
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $5462(T0)
+JR RA
+Checks:
+# ======== DpadRight - HappySm:
+LUI T1, $0100
+BEQ T1, T2, Pressed
+LUI A0, $0451
+# =========== DpadLeft - SadSm:
+LUI T1, $0200
+BEQ T1, T2, Pressed
+LUI A0, $0458
+# =========== DpadDown - SadLg:
+LUI T1, $0400
+BEQ T1, T2, Pressed
+LUI A0, $045F
+# =========== DpadUp - HappyLg:
+LUI T1, $0800
+BEQ T1, T2, Pressed
+LUI A0, $044A
+JR RA
+# ================= Exit Point:
+ReloadReturn:
+LUI T1, $800C
+LW RA, $CE90(T1)
+JR RA
+NOP
+Pressed:
+SRL A0, A0, $0010
+JAL $800602AC
+ADD A0, A0, T3
+J ReloadReturn
+NOP

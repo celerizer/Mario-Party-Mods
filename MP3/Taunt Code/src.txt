@@ -1,0 +1,146 @@
+addr:
+80078E9C
+J $8009BB60
+
+addr:
+800073B4
+NOP
+J $8009BCB0
+NOP
+
+addr:
+8009BB60
+# Store return address:
+LUI T0, $8009
+SW RA, $BB50(T0)
+
+# Find if odd or even frame:
+MFHI T1
+LUI T2, $0001
+SRL T2, T2, $0010
+AND T1, T1, T2
+BNE T1, T2, ReloadReturn
+
+# Load memory for sfx, button:
+LUI T0, $800D
+SB R0, $BB58(T0)
+
+LB T3, $110B(T0)
+JAL FindController
+LB T4, $110A(T0)
+
+LB T3, $1143(T0)
+JAL FindController
+LB T4, $1142(T0)
+
+LB T3, $117B(T0)
+JAL FindController
+LB T4, $117A(T0)
+
+LB T3, $11B3(T0)
+JAL FindController
+LB T4, $11B2(T0)
+
+J ReloadReturn
+
+FindController:
+LUI T5, $0000
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $5558(T0)
+LUI T5, $0001
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $5556(T0)
+LUI T5, $0002
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $555C(T0)
+LUI T5, $0003
+SRL T5, T5, $0010
+BEQ T4, T5, Checks
+LW T2, $555A(T0)
+JR RA
+
+Checks:
+# =========== CRight - Despair:
+LUI T1, $0001
+BEQ T1, T2, Pressed
+LUI A0, $02AC
+# ============ CLeft - Despair:
+LUI T1, $0002
+BEQ T1, T2, Pressed
+LUI A0, $0287
+# ========= CDown - GoodChoice:
+LUI T1, $0004
+BEQ T1, T2, Pressed
+LUI A0, $02B5
+# ============= CUp - LoseMini:
+LUI T1, $0008
+BEQ T1, T2, Pressed
+LUI A0, $026C
+# ================== L - Taunt:
+LUI T1, $0020
+BEQ T1, T2, Pressed
+LUI A0, $02BE
+# ============= ZL - Superstar:
+LUI T1, $2020
+BEQ T1, T2, Pressed
+LUI A0, $02C5
+# =========== DRight - WinMini:
+LUI T1, $0100
+BEQ T1, T2, Pressed
+LUI A0, $0290
+# ============ DLeft - WinStar:
+LUI T1, $0200
+BEQ T1, T2, Pressed
+LUI A0, $0263
+# ============ DDown - WinItem:
+LUI T1, $0400
+BEQ T1, T2, Pressed
+LUI A0, $0275
+# ============== DUp - WinGame:
+LUI T1, $0800
+BEQ T1, T2, Pressed
+LUI A0, $027E
+JR RA
+
+# ================= Exit Point:
+ReloadReturn:
+LUI T1, $8009
+LW RA, $BB50(T1)
+JR RA
+
+Pressed:
+# ==== Determine sound channel:
+LUI T6, $0002
+SRL T6, T6, $0010
+MULT T4, T6
+MFLO T4
+ADDI T4, T4, $0003
+SB T4, $BB58(T0)
+
+# ====== Add character to clip:
+SRL A0, A0, $0010
+JAL $80007080
+ADD A0, A0, T3
+
+J ReloadReturn
+NOP
+
+# === Overriding sound channel:
+addr:
+8009BCB0
+LUI T9, $800D
+SW RA, $BB54(T9)
+LB V1, $BB58(T9)
+BEQ V1, R0, ChannelReturn
+NOP
+LB A2, $BB58(T9)
+ChannelReturn:
+SLL V0, A2, $0006
+SUBU V0, V0, A2
+SLL V0, V0, $0002
+LW RA, $BB54(T9)
+J $800073C0
+NOP
